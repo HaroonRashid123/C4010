@@ -8,6 +8,14 @@ class CustomChess6x6:
         self.turn = "white"  # Start with White's turn
 
     def setup_pieces(self):
+        '''
+            R = Rook
+            B = Bishop
+            H = Knight(Horse)
+            Q = Queen
+            K = King
+            P = Pawn
+        '''
         # Initialize pieces on the board
         self.board[0] = ["R", "N", "B", "Q", "K", "R"]  # Black pieces
         self.board[1] = ["P"] * 6                      # Black pawns
