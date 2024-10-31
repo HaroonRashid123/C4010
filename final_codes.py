@@ -44,7 +44,7 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
     q = np.zeros((env.n_states, env.n_actions))
     
     for _ in range(max_episode):
-        state, _ = env.reset()
+        state, _ = env.reset() 
         while True:
             # Choose e-greedy action
             actions = env.get_possible_actions()

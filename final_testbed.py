@@ -29,7 +29,7 @@ def _runExperiments():
 
     # Main loop to demonstrate integration
     custom_board = mc.CustomChess6x6()
-    custom_board.display()
+    # custom_board.display()
 
     while True:  # Run until there's a winner
         mc.play_chess(custom_board)

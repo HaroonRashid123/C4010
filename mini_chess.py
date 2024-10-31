@@ -37,37 +37,46 @@ class ChessPiece(Enum):
         self.p_type = p_type
         self.color = color
 
-
 class CustomChess6x6:
     def __init__(self):
         self.size = 6
         self.reset_board()  # Initialize board
 
+        '''
+        
+        
+        '''
+        self.n_states = 0
+
+        
+        self.n_actions = 0
+
     def reset_board (self):
         # The location and pieces on the board represent the state
         self.board = np.zeros((6, 6), dtype=int)
 
+        # Los Alamos Chess Layout
         # Place Black back-rank pieces
-        self.board[0] = [ChessPiece(Piece.ROOK, Colour.BLACK),
-                        ChessPiece(Piece.KNIGHT, Colour.BLACK),
-                        ChessPiece(Piece.BISHOP, Colour.BLACK),
-                        ChessPiece(Piece.QUEEN, Colour.BLACK),
-                        ChessPiece(Piece.KING, Colour.BLACK),
-                        ChessPiece(Piece.ROOK, Colour.BLACK)]
+        self.board[0] = [ChessPiece(PieceType.ROOK, Colour.BLACK),
+                        ChessPiece(PieceType.KNIGHT, Colour.BLACK),
+                        ChessPiece(PieceType.QUEEN, Colour.BLACK),
+                        ChessPiece(PieceType.KING, Colour.BLACK),
+                        ChessPiece(PieceType.KNIGHT, Colour.BLACK),
+                        ChessPiece(PieceType.ROOK, Colour.BLACK)]
         
         # Place Black pawns
-        self.board[1] = [ChessPiece(Piece.PAWN, Colour.BLACK) for _ in range(6)]
+        self.board[1] = [ChessPiece(PieceType.PAWN, Colour.BLACK) for _ in range(6)]
         
         # Place White pawns
-        self.board[4] = [ChessPiece(Piece.PAWN, Colour.WHITE) for _ in range(6)]
+        self.board[4] = [ChessPiece(PieceType.PAWN, Colour.WHITE) for _ in range(6)]
         
         # Place White back-rank pieces
-        self.board[5] = [ChessPiece(Piece.ROOK, Colour.WHITE),
-                        ChessPiece(Piece.KNIGHT, Colour.WHITE),
-                        ChessPiece(Piece.BISHOP, Colour.WHITE),
-                        ChessPiece(Piece.QUEEN, Colour.WHITE),
-                        ChessPiece(Piece.KING, Colour.WHITE),
-                        ChessPiece(Piece.ROOK, Colour.WHITE)]
+        self.board[5] = [ChessPiece(PieceType.ROOK, Colour.WHITE),
+                        ChessPiece(PieceType.KNIGHT, Colour.WHITE),
+                        ChessPiece(PieceType.QUEEN, Colour.WHITE),
+                        ChessPiece(PieceType.KING, Colour.WHITE),
+                        ChessPiece(PieceType.KNIGHT, Colour.WHITE),
+                        ChessPiece(PieceType.ROOK, Colour.WHITE)]
         
         # White always starts in Chess
         self.turn = Colour.WHITE    
