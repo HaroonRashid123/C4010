@@ -20,7 +20,7 @@ from enum import Enum
 SIZE = 6 # = ROWS = COLUMNS
 
 # Enums for Readability
-class Piece(Enum):
+class PieceType(Enum):
     PAWN = 1
     KNIGHT = 2
     BISHOP = 3
@@ -33,44 +33,20 @@ class Colour(Enum):
     BLACK = -1
 
 class ChessPiece(Enum):
-    def __init__(self, piece, color):
-        self.piece = piece
+    def __init__(self, p_type: PieceType, color: Colour):
+        self.p_type = p_type
         self.color = color
 
 
 class CustomChess6x6:
     def __init__(self):
         self.size = 6
+        self.reset_board()  # Initialize board
 
-        # The location and pieces on the baord represent the state
+    def reset_board (self):
+        # The location and pieces on the board represent the state
         self.board = np.zeros((6, 6), dtype=int)
 
-        # Initialize board
-        self._reset_board()
-
-        # White always starts in Chess
-        self.turn = Colour.WHITE
-    
-    def reset(self):
-        self._reset_board()
-        self.turn = Colour.WHITE 
-        return self.board
-        # return self.board.copy()
-    
-    def step(self, action):
-        next_cell = tuple(self._current_cell + self._directions[action])
-
-        if not self._occupancy[next_cell]:
-            self._current_cell = next_cell
-
-        state = self._to_state[self._current_cell]
-
-        terminated = state == self._goal
-        reward = 1 if terminated else 0.
-
-        return state, reward, terminated, False, {}
-
-    def _reset_board(self):
         # Place Black back-rank pieces
         self.board[0] = [ChessPiece(Piece.ROOK, Colour.BLACK),
                         ChessPiece(Piece.KNIGHT, Colour.BLACK),
@@ -92,13 +68,15 @@ class CustomChess6x6:
                         ChessPiece(Piece.QUEEN, Colour.WHITE),
                         ChessPiece(Piece.KING, Colour.WHITE),
                         ChessPiece(Piece.ROOK, Colour.WHITE)]
-    
-    def display(self):
-        for row in self.board:
-            print(' '.join(row))
-        print()
+        
+        # White always starts in Chess
+        self.turn = Colour.WHITE    
 
+        return self.board
+        # return self.board.copy()
+    
     def is_valid_move(self, start, end):
+
         start_piece = self.board[start[0]][start[1]]
         end_piece = self.board[end[0]][end[1]]
 
@@ -107,60 +85,55 @@ class CustomChess6x6:
             return False
         
         # Check if the end position is occupied by the same color
-        if (end_piece.islower() and start_piece.islower()) or \
-           (end_piece.isupper() and start_piece.isupper()):
+        # Check if the end position is occupied by the same color
+        if (end_piece != 0 and start_piece.colour == end_piece.colour):
             return False
         
-        # Implement movement rules for each piece
-        if start_piece.upper() == 'P':  # Pawn
-            if start_piece == 'P':  # Black pawn
-                if end == (start[0] + 1, start[1]) and end_piece == '.':
-                    return True
-                if (start[0] == 1 and end == (start[0] + 2, start[1]) and end_piece == '.'):
-                    return True
-                if end == (start[0] + 1, start[1] + 1) and end_piece.islower():
-                    return True
-                if end == (start[0] + 1, start[1] - 1) and end_piece.islower():
-                    return True
-            else:  # White pawn
-                if end == (start[0] - 1, start[1]) and end_piece == '.':
-                    return True
-                if (start[0] == 4 and end == (start[0] - 2, start[1]) and end_piece == '.'):
-                    return True
-                if end == (start[0] - 1, start[1] + 1) and end_piece.isupper():
-                    return True
-                if end == (start[0] - 1, start[1] - 1) and end_piece.isupper():
-                    return True
+         # Implement movement rules for each piece
+        if start_piece.piece_type == PieceType.PAWN:
+            direction = 1 if start_piece.colour == Colour.BLACK else -1
+            # Regular move
+            if end == (start[0] + direction, start[1]) and end_piece == 0:
+                return True
+            # Initial double move
+            if (start[0] == (1 if start_piece.colour == Colour.BLACK else 4) and 
+                    end == (start[0] + direction * 2, start[1]) and end_piece == 0):
+                return True
+            # Capture moves
+            if end == (start[0] + direction, start[1] + 1) and end_piece != 0 and end_piece.colour != start_piece.colour:
+                return True
+            if end == (start[0] + direction, start[1] - 1) and end_piece != 0 and end_piece.colour != start_piece.colour:
+                return True
 
-        if start_piece.upper() == 'R':  # Rook
+        elif start_piece.piece_type == PieceType.ROOK:
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == '.' for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
+                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == '.' for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
+                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
 
-        if start_piece.upper() == 'N':  # Knight
+        elif start_piece.piece_type == PieceType.KNIGHT:
             return (abs(start[0] - end[0]), abs(start[1] - end[1])) in [(2, 1), (1, 2)]
 
-        if start_piece.upper() == 'B':  # Bishop
+        elif start_piece.piece_type == PieceType.BISHOP:
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == '.'
-                           for i in range(1, abs(start[0] - end[0])))
+                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0
+                        for i in range(1, abs(start[0] - end[0])))
 
-        if start_piece.upper() == 'Q':  # Queen
+        elif start_piece.piece_type == PieceType.QUEEN:
             # Check if the move is a valid rook move
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == '.' for i in range(min(start[1], end[1]) + 1, max(start[1], end[1]))) and \
-                       (self.board[start[0]][end[1]] == '.' or self.board[start[0]][end[1]].isupper() != start_piece.isupper())
+                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1]))) and \
+                    (end_piece == 0 or end_piece.colour != start_piece.colour)
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == '.' for i in range(min(start[0], end[0]) + 1, max(start[0], end[0]))) and \
-                       (self.board[end[0]][start[1]] == '.' or self.board[end[0]][start[1]].isupper() != start_piece.isupper())
+                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0]))) and \
+                    (end_piece == 0 or end_piece.colour != start_piece.colour)
             # Check if the move is a valid bishop move
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == '.'
-                           for i in range(1, abs(start[0] - end[0]))) and \
-                       (self.board[end[0]][end[1]] == '.' or self.board[end[0]][end[1]].isupper() != start_piece.isupper())
+                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0
+                        for i in range(1, abs(start[0] - end[0]))) and \
+                    (end_piece == 0 or end_piece.colour != start_piece.colour)
 
-        if start_piece.upper() == 'K':  # King
+        elif start_piece.piece_type == PieceType.KING:
             return abs(start[0] - end[0]) <= 1 and abs(start[1] - end[1]) <= 1
 
         return False
@@ -176,13 +149,106 @@ class CustomChess6x6:
     def check_winner(self):
         white_king = any('K' in row for row in self.board)
         black_king = any('k' in row for row in self.board)
-
+        
         if not white_king:
-            return 'Black wins!'
-        if not black_king:
-            return 'White wins!'
-        return None
+            return True, Colour.BLACK
+        elif not black_king:
+            return True, Colour.WHITE
+        else:
+            return False, None
     
+    def get_moves(self, position):
+        row, col = position
+        piece = self.board[row][col]
+        moves = []
+
+        if piece.p_type == PieceType.PAWN:
+            direction = 1 if piece.colour == Colour.BLACK else -1
+            # Regular move
+            if self.is_valid_move((row, col), (row + direction, col)):
+                moves.append(position, (row + direction, col))
+            # Initial double move
+            if (piece.colour == Colour.BLACK and row == 1) or (piece.colour == Colour.WHITE and row == 4):
+                if self.is_valid_move((row, col), (row + direction * 2, col)):
+                    moves.append(position, (row + direction * 2, col))
+            # Capture moves
+            for d in [-1, 1]:
+                if self.is_valid_move((row, col), (row + direction, col + d)):
+                    moves.append(position, (row + direction, col + d))
+
+        elif piece.p_type == PieceType.KNIGHT:
+            knight_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
+            for dr, dc in knight_moves:
+                new_row, new_col = row + dr, col + dc
+                if 0 <= new_row < self.size and 0 <= new_col < self.size and self.is_valid_move((row, col), (new_row, new_col)):
+                    moves.append(position, (new_row, new_col))
+
+        elif piece.p_type == PieceType.BISHOP:
+            for i in range(1, self.size):
+                # Check all four diagonal directions
+                for dr, dc in [(-i, -i), (-i, i), (i, -i), (i, i)]:
+                    new_row, new_col = row + dr, col + dc
+                    if 0 <= new_row < self.size and 0 <= new_col < self.size:
+                        if self.is_valid_move((row, col), (new_row, new_col)):
+                            moves.append(position, (new_row, new_col))
+                        else:
+                            break  # Stop if a piece blocks the way
+        
+        elif piece.p_type == PieceType.ROOK:
+            # Add rook movement logic
+            for r in range(self.size):
+                if r != row and self.is_valid_move((row, col), (r, col)):
+                    moves.append(position, (r, col))
+            for c in range(self.size):
+                if c != col and self.is_valid_move((row, col), (row, c)):
+                    moves.append(position, (row, c))
+
+        elif piece.p_type == PieceType.QUEEN:
+            # Add queen movement logic (rook and bishop combined)
+            # Rook-like moves
+            for r in range(self.size):
+                if r != row and self.is_valid_move((row, col), (r, col)):
+                    moves.append(position, (r, col))
+            for c in range(self.size):
+                if c != col and self.is_valid_move((row, col), (row, c)):
+                    moves.append(position, (row, c))
+            # Bishop-like moves
+            for i in range(1, self.size):
+                for dr, dc in [(-i, -i), (-i, i), (i, -i), (i, i)]:
+                    new_row, new_col = row + dr, col + dc
+                    if 0 <= new_row < self.size and 0 <= new_col < self.size:
+                        if self.is_valid_move((row, col), (new_row, new_col)):
+                            moves.append(position, (new_row, new_col))
+                        else:
+                            break  # Stop if a piece blocks the way
+
+        elif piece.p_type == Piece.KING:
+            for dr in [-1, 0, 1]:
+                for dc in [-1, 0, 1]:
+                    if (dr, dc) != (0, 0):  # Skip the (0, 0) move
+                        new_row, new_col = row + dr, col + dc
+                        if 0 <= new_row < self.size and 0 <= new_col < self.size and self.is_valid_move((row, col), (new_row, new_col)):
+                            moves.append(position, (new_row, new_col))
+        
+        return moves
+
+    def get_possible_actions(self):
+        possible_actions = []
+
+        for row in range(self.size):
+            for col in range(self.size):
+                piece = self.board[row][col]
+                if (isinstance(piece, ChessPiece) and (piece.colour == self.turn)):
+                    moves = self.get_moves((row, col))
+                    possible_actions.append(moves)
+        
+        return possible_actions
+  
+    def display(self):
+        for row in self.board:
+            print(' '.join(row))
+        print()
+
 def play_chess(board):
     valid_moves = []
     for i in range(board.size):

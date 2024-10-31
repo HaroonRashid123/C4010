@@ -1,8 +1,15 @@
-# ==================================================================================================================================================================================== #
 '''
-    COMP 4010 F24 - Final Project
+    COMP 4010 [Fall 2024]
     Carleton University
+
+    Project Details:
+        ~ RL Chess Agent ~
+        Date: October 15, 2024
+
+        Group Members:
+            Kyle Eng 101192595
 '''
+
 # ==================================================================================================================================================================================== #
 
 import numpy as np
@@ -40,9 +47,10 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
         state, _ = env.reset()
         while True:
             # Choose e-greedy action
+            actions = env.get_possible_actions()
             if random.random() < epsilon:
                 # Choose random action
-                action = np.random.randint(env.n_actions)
+                action = random.choice(actions)
             else:
                 # Randomly select one of the best actions
                 top_actions = np.flatnonzero(q[state] == np.amax(q[state]))
@@ -57,7 +65,9 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
             # Go to next state
             state = state_next
 
-            if (terminated):
+            # Check if goal has been reached (Game is over)
+            game_over, winner = env.check_winner()
+            if (game_over):
                 break
         
     # After convergence, Find Optimal Policy
