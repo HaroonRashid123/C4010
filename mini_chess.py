@@ -1,30 +1,101 @@
+'''
+    COMP 4010 [Fall 2024]
+    Carleton University
+
+    Project Details:
+        ~ RL Chess Agent ~
+        Date: October 15, 2024
+
+        Group Members:
+            Kyle Eng 101192595
+'''
+
+# Imports
 import random
+import numpy as np
+
+from enum import Enum
+
+# Constants
+SIZE = 6 # = ROWS = COLUMNS
+
+# Enums for Readability
+class Piece(Enum):
+    PAWN = 1
+    KNIGHT = 2
+    BISHOP = 3
+    ROOK = 4
+    QUEEN = 5
+    KING = 6
+
+class Colour(Enum):
+    WHITE = 1
+    BLACK = -1
+
+class ChessPiece(Enum):
+    def __init__(self, piece, color):
+        self.piece = piece
+        self.color = color
+
 
 class CustomChess6x6:
     def __init__(self):
         self.size = 6
-        self.board = [["." for _ in range(self.size)] for _ in range(self.size)]
-        self.setup_pieces()
-        self.turn = "white"  # Start with White's turn
 
-    def setup_pieces(self):
-        '''
-            R = Rook
-            B = Bishop
-            H = Knight(Horse)
-            Q = Queen
-            K = King
-            P = Pawn
-        '''
-        # Initialize pieces on the board
-        self.board[0] = ["R", "N", "B", "Q", "K", "R"]  # Black pieces
-        self.board[1] = ["P"] * 6                      # Black pawns
-        self.board[4] = ["p"] * 6                      # White pawns
-        self.board[5] = ["r", "n", "b", "q", "k", "r"]  # White pieces
+        # The location and pieces on the baord represent the state
+        self.board = np.zeros((6, 6), dtype=int)
 
+        # Initialize board
+        self._reset_board()
+
+        # White always starts in Chess
+        self.turn = Colour.WHITE
+    
+    def reset(self):
+        self._reset_board()
+        self.turn = Colour.WHITE 
+        return self.board
+        # return self.board.copy()
+    
+    def step(self, action):
+        next_cell = tuple(self._current_cell + self._directions[action])
+
+        if not self._occupancy[next_cell]:
+            self._current_cell = next_cell
+
+        state = self._to_state[self._current_cell]
+
+        terminated = state == self._goal
+        reward = 1 if terminated else 0.
+
+        return state, reward, terminated, False, {}
+
+    def _reset_board(self):
+        # Place Black back-rank pieces
+        self.board[0] = [ChessPiece(Piece.ROOK, Colour.BLACK),
+                        ChessPiece(Piece.KNIGHT, Colour.BLACK),
+                        ChessPiece(Piece.BISHOP, Colour.BLACK),
+                        ChessPiece(Piece.QUEEN, Colour.BLACK),
+                        ChessPiece(Piece.KING, Colour.BLACK),
+                        ChessPiece(Piece.ROOK, Colour.BLACK)]
+        
+        # Place Black pawns
+        self.board[1] = [ChessPiece(Piece.PAWN, Colour.BLACK) for _ in range(6)]
+        
+        # Place White pawns
+        self.board[4] = [ChessPiece(Piece.PAWN, Colour.WHITE) for _ in range(6)]
+        
+        # Place White back-rank pieces
+        self.board[5] = [ChessPiece(Piece.ROOK, Colour.WHITE),
+                        ChessPiece(Piece.KNIGHT, Colour.WHITE),
+                        ChessPiece(Piece.BISHOP, Colour.WHITE),
+                        ChessPiece(Piece.QUEEN, Colour.WHITE),
+                        ChessPiece(Piece.KING, Colour.WHITE),
+                        ChessPiece(Piece.ROOK, Colour.WHITE)]
+    
     def display(self):
         for row in self.board:
-            print(" ".join(row))
+            print(' '.join(row))
         print()
 
     def is_valid_move(self, start, end):
@@ -41,55 +112,55 @@ class CustomChess6x6:
             return False
         
         # Implement movement rules for each piece
-        if start_piece.upper() == "P":  # Pawn
-            if start_piece == "P":  # Black pawn
-                if end == (start[0] + 1, start[1]) and end_piece == ".":
+        if start_piece.upper() == 'P':  # Pawn
+            if start_piece == 'P':  # Black pawn
+                if end == (start[0] + 1, start[1]) and end_piece == '.':
                     return True
-                if (start[0] == 1 and end == (start[0] + 2, start[1]) and end_piece == "."):
+                if (start[0] == 1 and end == (start[0] + 2, start[1]) and end_piece == '.'):
                     return True
                 if end == (start[0] + 1, start[1] + 1) and end_piece.islower():
                     return True
                 if end == (start[0] + 1, start[1] - 1) and end_piece.islower():
                     return True
             else:  # White pawn
-                if end == (start[0] - 1, start[1]) and end_piece == ".":
+                if end == (start[0] - 1, start[1]) and end_piece == '.':
                     return True
-                if (start[0] == 4 and end == (start[0] - 2, start[1]) and end_piece == "."):
+                if (start[0] == 4 and end == (start[0] - 2, start[1]) and end_piece == '.'):
                     return True
                 if end == (start[0] - 1, start[1] + 1) and end_piece.isupper():
                     return True
                 if end == (start[0] - 1, start[1] - 1) and end_piece.isupper():
                     return True
 
-        if start_piece.upper() == "R":  # Rook
+        if start_piece.upper() == 'R':  # Rook
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == "." for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
+                return all(self.board[start[0]][i] == '.' for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == "." for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
+                return all(self.board[i][start[1]] == '.' for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
 
-        if start_piece.upper() == "N":  # Knight
+        if start_piece.upper() == 'N':  # Knight
             return (abs(start[0] - end[0]), abs(start[1] - end[1])) in [(2, 1), (1, 2)]
 
-        if start_piece.upper() == "B":  # Bishop
+        if start_piece.upper() == 'B':  # Bishop
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == "."
+                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == '.'
                            for i in range(1, abs(start[0] - end[0])))
 
-        if start_piece.upper() == "Q":  # Queen
+        if start_piece.upper() == 'Q':  # Queen
             # Check if the move is a valid rook move
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == "." for i in range(min(start[1], end[1]) + 1, max(start[1], end[1]))) and \
-                       (self.board[start[0]][end[1]] == "." or self.board[start[0]][end[1]].isupper() != start_piece.isupper())
+                return all(self.board[start[0]][i] == '.' for i in range(min(start[1], end[1]) + 1, max(start[1], end[1]))) and \
+                       (self.board[start[0]][end[1]] == '.' or self.board[start[0]][end[1]].isupper() != start_piece.isupper())
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == "." for i in range(min(start[0], end[0]) + 1, max(start[0], end[0]))) and \
-                       (self.board[end[0]][start[1]] == "." or self.board[end[0]][start[1]].isupper() != start_piece.isupper())
+                return all(self.board[i][start[1]] == '.' for i in range(min(start[0], end[0]) + 1, max(start[0], end[0]))) and \
+                       (self.board[end[0]][start[1]] == '.' or self.board[end[0]][start[1]].isupper() != start_piece.isupper())
             # Check if the move is a valid bishop move
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == "."
+                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == '.'
                            for i in range(1, abs(start[0] - end[0]))) and \
-                       (self.board[end[0]][end[1]] == "." or self.board[end[0]][end[1]].isupper() != start_piece.isupper())
+                       (self.board[end[0]][end[1]] == '.' or self.board[end[0]][end[1]].isupper() != start_piece.isupper())
 
-        if start_piece.upper() == "K":  # King
+        if start_piece.upper() == 'K':  # King
             return abs(start[0] - end[0]) <= 1 and abs(start[1] - end[1]) <= 1
 
         return False
@@ -98,28 +169,28 @@ class CustomChess6x6:
         if self.is_valid_move(start, end):
             piece = self.board[start[0]][start[1]]
             self.board[end[0]][end[1]] = piece
-            self.board[start[0]][start[1]] = "."
+            self.board[start[0]][start[1]] = '.'
             return True
         return False
 
     def check_winner(self):
-        white_king = any("K" in row for row in self.board)
-        black_king = any("k" in row for row in self.board)
+        white_king = any('K' in row for row in self.board)
+        black_king = any('k' in row for row in self.board)
 
         if not white_king:
-            return "Black wins!"
+            return 'Black wins!'
         if not black_king:
-            return "White wins!"
+            return 'White wins!'
         return None
-
+    
 def play_chess(board):
     valid_moves = []
     for i in range(board.size):
         for j in range(board.size):
-            if board.board[i][j] != ".":
+            if board.board[i][j] != '.':
                 piece = board.board[i][j]
                 # Check if it's the current player's turn
-                if (board.turn == "white" and piece.islower()) or (board.turn == "black" and piece.isupper()):
+                if (board.turn == 'white' and piece.islower()) or (board.turn == 'black' and piece.isupper()):
                     continue  # Skip if it's the opponent's piece
 
                 # Check all possible moves (basic example)
@@ -136,21 +207,8 @@ def play_chess(board):
     if valid_moves:
         move = random.choice(valid_moves)
         board.move_piece(move[0], move[1])
-        print(f"{board.turn.capitalize()} moved: {move[0]} to {move[1]}")
+        print(f'{board.turn.capitalize()} moved: {move[0]} to {move[1]}')
         # Switch turns after the move
-        board.turn = "black" if board.turn == "white" else "white"
+        board.turn = 'black' if board.turn == 'white' else 'white'
     else:
-        print("No valid moves available for", board.turn)
-
-# Main loop to demonstrate integration
-custom_board = CustomChess6x6()
-custom_board.display()
-
-while True:  # Run until there's a winner
-    play_chess(custom_board)
-    custom_board.display()
-    
-    winner = custom_board.check_winner()
-    if winner:
-        print(winner)
-        break
+        print('No valid moves available for', board.turn)
