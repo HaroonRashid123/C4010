@@ -16,6 +16,8 @@ import numpy as np
 import random
 import time
 
+import CustomChess  as cc
+
 # ==================================================================================================================================================================================== #
 
 # ============================================================ #
@@ -47,10 +49,10 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
         state, _ = env.reset() 
         while True:
             # Choose e-greedy action
-            actions = env.get_possible_actions()
+            all_actions = env.get_possible_actions()
             if random.random() < epsilon:
                 # Choose random action
-                action = random.choice(actions)
+                action = random.choice(all_actions)
             else:
                 # Randomly select one of the best actions
                 top_actions = np.flatnonzero(q[state] == np.amax(q[state]))
@@ -65,9 +67,7 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
             # Go to next state
             state = state_next
 
-            # Check if goal has been reached (Game is over)
-            game_over, winner = env.check_winner()
-            if (game_over):
+            if (terminated):
                 break
         
     # After convergence, Find Optimal Policy
