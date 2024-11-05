@@ -91,7 +91,7 @@ def DynaQ(env, gamma, step_size, epsilon, max_episode, max_model_step):
             # Choose e-greedy action
             if random.random() < epsilon:
                 # Choose random action
-                action = np.random.randint(env.n_actions)
+                action = env.get
             else:
                 # Randomly select one of the best actions
                 top_actions = np.flatnonzero(q[state] == np.amax(q[state]))
