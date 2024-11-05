@@ -41,28 +41,6 @@ LOSS_REWARD = -100
 INVALID_ACTION_REWARD = -10
 VALID_ACTION_REWARD = 10
 
-class Piece:
-    icon: str
-    type: int
-    color: str
-    value: float
-
-PIECES = [
-    Piece(icon="♙", color=BLACK, type=PAWN,   value=PAWN_VALUE),
-    Piece(icon="♘", color=BLACK, type=KNIGHT, value=KNIGHT_VALUE),
-    Piece(icon="♗", color=BLACK, type=BISHOP, value=BISHOP_VALUE),
-    Piece(icon="♖", color=BLACK, type=ROOK,   value=ROOK_VALUE),
-    Piece(icon="♕", color=BLACK, type=QUEEN,  value=QUEEN_VALUE),
-    Piece(icon="♔", color=BLACK, type=KING,   value=0),
-    Piece(icon=".",  color=None,  type=EMPTY_SQUARE, value=0),
-    Piece(icon="♚", color=WHITE, type=KING,   value=0),
-    Piece(icon="♛", color=WHITE, type=QUEEN,  value=QUEEN_VALUE),
-    Piece(icon="♜", color=WHITE, type=ROOK,   value=ROOK_VALUE),
-    Piece(icon="♝", color=WHITE, type=BISHOP, value=BISHOP_VALUE),
-    Piece(icon="♞", color=WHITE, type=KNIGHT, value=KNIGHT_VALUE),
-    Piece(icon="♟", color=WHITE, type=PAWN,   value=PAWN_VALUE),
-]
-
 '''
     Black = (-)
     White = (+)
@@ -90,32 +68,32 @@ def make_random_policy(np_random, bot_player):
 
     return random_policy
 
-class Chess(gym.Env):
+class CustomChess(gym.Env):
     
     def __init__(self, render_mode=None): 
 
         # Setup Board/State
         self._size = 6
-        self.layout = board_LosAlamos
-        self.turn = WHITE
-        self.done = False
+        self._layout = board_LosAlamos
+        self._turn = WHITE
+        self._done = False
 
         '''
             Setup PLayers (RL Agent vs Opponent(Randomn Moves))
             Randomize whether agent is White/Black
         '''
-        self.player_colour = random.choice([WHITE, BLACK])
+        self._player_colour = random.choice([WHITE, BLACK])
         if (self.player_colour == WHITE):
-            self.opponent_colour = BLACK
+            self._opponent_colour = BLACK
         else:
-            self.opponent_colour = WHITE
+            self._opponent_colour = WHITE
         
         # Black vs White Pieces, 6x6 = size of board 
-        self.observation_space = gym.spaces.Box(-6, 6, (6, 6))
+        self._observation_space = gym.spaces.Box(-6, 6, (6, 6))
         # + 1 for White vs Black Turn
-        self.action_space = gym.spaces.Discrete(36 * 36 + 1)
+        self._action_space = gym.spaces.Discrete(36 * 36 + 1)
 
-        self.n_states = np.prod(self.observation_space.shape)
+        self._n_states = np.prod(self._observation_space.shape)
         
         '''
         6 pawns 
@@ -146,27 +124,27 @@ class Chess(gym.Env):
         
         In every state, there are 81 actions
         '''
-        self.n_actions = 81
+        self._n_actions = 81
     
     def reset(self):
         # Setup Board/State
-        self.layout = board_LosAlamos
-        self.turn = WHITE
-        self.done = False
+        self._layout = board_LosAlamos
+        self._turn = WHITE
+        self._done = False
 
         '''
             Setup PLayers (RL Agent vs Opponent(Randomn Moves))
             Randomize whether agent is White/Black
         '''
-        self.player_colour = random.choice([WHITE, BLACK])
-        if (self.player_colour == WHITE):
-            self.opponent_colour = BLACK
+        self._player_colour = random.choice([WHITE, BLACK])
+        if (self._player_colour == WHITE):
+            self._opponent_colour = BLACK
         else:
             self.opponent_colour = WHITE
 
-        state = (self.layout, self.turn)
+        state = (self._layout, self._turn)
 
-        return state
+        return state, {}
 
     def step(self, action):
         '''
@@ -178,11 +156,15 @@ class Chess(gym.Env):
          # TODO: implement movement 
         self.move_piece(action)
 
-        state = (self.board, self.turn)
+        state = (self._board, self._turn)
         reward = self.calculate_reward(state)
         terminated = self.check_winner()
  
         return state, reward, terminated, False, {}
+
+    def calculate_reward(state):
+        # TODO: implement rewards system
+        return 10
 
     def get_possible_actions(self):
         '''
@@ -261,20 +243,6 @@ class Chess(gym.Env):
                                 possible_actions.append(((row, col), (new_row, new_col)))
         
         return possible_actions
-
-    def calculate_reward(state):
-        # TODO: implement rewards system
-        return 10
-
-    def move_piece(self, action):
-        start = action[0]
-        end = action[1]
-        if self.is_valid_move(start, end):
-            piece = self.board[start[0]][start[1]]
-            self.board[end[0]][end[1]] = piece
-            self.board[start[0]][start[1]] = 0
-            return True
-        return False
     
     def is_valid_move(self, start, end):
 
@@ -316,16 +284,32 @@ class Chess(gym.Env):
                 
         return False
     
+    def move_piece(self, action):
+        start = action[0]
+        end = action[1]
+        if self.is_valid_move(start, end):
+            piece = self.board[start[0]][start[1]]
+            self.board[end[0]][end[1]] = piece
+            self.board[start[0]][start[1]] = 0
+            return True
+        return False
+    
     def check_winner(self):
-        white_king_alive = any(KING_ID in row for row in self.board)
-        black_king_alive = any(-KING_ID in row for row in self.board)
+        white_king_alive = any(KING in row for row in self.board)
+        black_king_alive = any(-KING in row for row in self.board)
         
         if not white_king_alive:
             return True, BLACK
         elif not black_king_alive:
             return True, WHITE
         else:
+            # TODO CHECK IF KING Can't excape Check
             return False, None
+    
+    def encode_state(self, state_tuple):
+        # Flatten the board layout and turn into a single integer index for `q`
+        layout, turn = state_tuple
+        return hash(tuple(map(tuple, layout))) ^ hash(turn)
 
     @property
     def n_actions(self):
@@ -334,11 +318,27 @@ class Chess(gym.Env):
     @property
     def n_states(self):
         return self._n_states
+    
+    @property
+    def size(self):
+        return self._size
+    
+    @property
+    def layout(self):
+        return self._layout
 
     @property
-    def goal(self):
-        return self._goal
-
+    def turn(self):
+        return self._turn
+    
     @property
-    def to_cell(self):
-        return self._to_cell
+    def done(self):
+        return self._done
+    
+    @property
+    def player_colour(self):
+        return self._player_colour
+    
+    @property
+    def opponent_colour(self):
+        return self._opponent_colour

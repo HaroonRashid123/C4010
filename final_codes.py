@@ -46,21 +46,24 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
     q = np.zeros((env.n_states, env.n_actions))
     
     for _ in range(max_episode):
-        state, _ = env.reset() 
+        state_tuple, _ = env.reset()
+        state = env.encode_state(state_tuple)
+
         while True:
             # Choose e-greedy action
-            all_actions = env.get_possible_actions()
             if random.random() < epsilon:
                 # Choose random action
-                action = random.choice(all_actions)
+                all_actions = env.get_possible_actions()
+                action = random.choice(range(len(all_actions)))
             else:
                 # Randomly select one of the best actions
                 top_actions = np.flatnonzero(q[state] == np.amax(q[state]))
                 action = random.choice(top_actions)
         
             # get S' and reward
-            state_next, reward, terminated, _, _ = env.step(action)
-            
+            state_next_tuple, reward, terminated, _, _ = env.step(action)
+            state_next = env.encode_state(state_next_tuple)
+
             #Update Q(s,a)
             q[state, action] += step_size*(reward + gamma*np.amax(q[state_next]) - q[state, action])
 
@@ -81,6 +84,7 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
 # ============================================================ #
 #                           DYNA-Q                             #
 # ============================================================ #
+# TODO: Make it work for chess env
 def DynaQ(env, gamma, step_size, epsilon, max_episode, max_model_step):
     # Initialize Q, model
     q = np.zeros((env.n_states, env.n_actions))
