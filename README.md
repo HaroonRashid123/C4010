@@ -2,6 +2,7 @@
 
 ## Group Members:
 - Kyle Eng 101192595
+- Haroon Rashid 101183600
 
 ## Git Commands
 ### Cloning (one time only)
