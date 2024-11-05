@@ -272,7 +272,7 @@ class Chess(gym.Env):
         if self.is_valid_move(start, end):
             piece = self.board[start[0]][start[1]]
             self.board[end[0]][end[1]] = piece
-            self.board[start[0]][start[1]] = '.'
+            self.board[start[0]][start[1]] = 0
             return True
         return False
     
@@ -307,17 +307,13 @@ class Chess(gym.Env):
         elif p_type == QUEEN:
             # Check if the move is a valid rook move
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1]))) and \
-                    (end_piece == 0 or end_piece.colour != start_piece.colour)
+                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0]))) and \
-                    (end_piece == 0 or end_piece.colour != start_piece.colour)
+                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
             # Check if the move is a valid bishop move
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0
-                        for i in range(1, abs(start[0] - end[0]))) and \
-                    (end_piece == 0 or end_piece.colour != start_piece.colour)
-    
+                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0 for i in range(1, abs(start[0] - end[0])))
+                
         return False
     
     def check_winner(self):
