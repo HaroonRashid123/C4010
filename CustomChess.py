@@ -74,7 +74,7 @@ class CustomChess(gym.Env):
 
         # Setup Board/State
         self._size = 6
-        self._layout = board_LosAlamos
+        self._board = board_LosAlamos
         self._turn = WHITE
         self._done = False
 
@@ -140,7 +140,7 @@ class CustomChess(gym.Env):
         if (self._player_colour == WHITE):
             self._opponent_colour = BLACK
         else:
-            self.opponent_colour = WHITE
+            self._opponent_colour = WHITE
 
         state = (self._layout, self._turn)
 
@@ -180,10 +180,10 @@ class CustomChess(gym.Env):
         
         for row in range(self.size):
             for col in range(self.size):
-                piece = self.board[row][col]
+                piece = self._board[row][col]
                 
                 if piece == PAWN:
-                    d = 1 if piece.colour == BLACK else -1
+                    d = 1 if piece < 0 else -1
                     # Regular moves
                     if self.is_valid_move((row, col), (row+d, col + d)):
                         possible_actions.append((row, col), (row+d, col+d))
@@ -246,8 +246,8 @@ class CustomChess(gym.Env):
     
     def is_valid_move(self, start, end):
 
-        start_p = self.board[start[0]][start[1]]
-        end_p = self.board[end[0]][end[1]]
+        start_p = self._board[start[0]][start[1]]
+        end_p = self._board[end[0]][end[1]]
 
         # Check if the end position is within bounds (on the board)
         if not (0 <= end[0] < self.size and 0 <= end[1] < self.size):
@@ -262,25 +262,25 @@ class CustomChess(gym.Env):
         # Check for obstructions, if piece can move multiple squares
         if p_type == ROOK:
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
+                return all(self._board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
+                return all(self._board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
 
         elif p_type == BISHOP:
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):  # Diagonal move
                 direction_x = 1 if end[0] > start[0] else -1
                 direction_y = 1 if end[1] > start[1] else -1
-                return all(self.board[start[0] + i * direction_x][start[1] + i * direction_y] == 0 for i in range(1, abs(start[0] - end[0])))
+                return all(self._board[start[0] + i * direction_x][start[1] + i * direction_y] == 0 for i in range(1, abs(start[0] - end[0])))
                     
         elif p_type == QUEEN:
             # Check if the move is a valid rook move
             if start[0] == end[0]:  # Horizontal move
-                return all(self.board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
+                return all(self._board[start[0]][i] == 0 for i in range(min(start[1], end[1]) + 1, max(start[1], end[1])))
             if start[1] == end[1]:  # Vertical move
-                return all(self.board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
+                return all(self._board[i][start[1]] == 0 for i in range(min(start[0], end[0]) + 1, max(start[0], end[0])))
             # Check if the move is a valid bishop move
             if abs(start[0] - end[0]) == abs(start[1] - end[1]):
-                return all(self.board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0 for i in range(1, abs(start[0] - end[0])))
+                return all(self._board[start[0] + i * (1 if end[0] > start[0] else -1)][start[1] + i * (1 if end[1] > start[1] else -1)] == 0 for i in range(1, abs(start[0] - end[0])))
                 
         return False
     
@@ -288,15 +288,15 @@ class CustomChess(gym.Env):
         start = action[0]
         end = action[1]
         if self.is_valid_move(start, end):
-            piece = self.board[start[0]][start[1]]
-            self.board[end[0]][end[1]] = piece
-            self.board[start[0]][start[1]] = 0
+            piece = self._board[start[0]][start[1]]
+            self._board[end[0]][end[1]] = piece
+            self._board[start[0]][start[1]] = 0
             return True
         return False
     
     def check_winner(self):
-        white_king_alive = any(KING in row for row in self.board)
-        black_king_alive = any(-KING in row for row in self.board)
+        white_king_alive = any(KING in row for row in self._board)
+        black_king_alive = any(-KING in row for row in self._board)
         
         if not white_king_alive:
             return True, BLACK
