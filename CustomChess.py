@@ -128,7 +128,7 @@ class CustomChess(gym.Env):
     
     def reset(self):
         # Setup Board/State
-        self._layout = board_LosAlamos
+        self._board = board_LosAlamos
         self._turn = WHITE
         self._done = False
 
@@ -142,7 +142,7 @@ class CustomChess(gym.Env):
         else:
             self._opponent_colour = WHITE
 
-        state = (self._layout, self._turn)
+        state = (self._board, self._turn)
 
         return state, {}
 
@@ -181,19 +181,20 @@ class CustomChess(gym.Env):
         for row in range(self.size):
             for col in range(self.size):
                 piece = self._board[row][col]
+                # print (f'{piece} at: {row}, {col}')
                 
-                if piece == PAWN:
+                if abs(piece) == PAWN:
                     d = 1 if piece < 0 else -1
                     # Regular moves
                     if self.is_valid_move((row, col), (row+d, col + d)):
                         possible_actions.append((row, col), (row+d, col+d))
                     # Capture moves (Diagonal)
-                    if self.is_valid_move(((row, col), (row+d, col+1))):
+                    if self.is_valid_move((row, col), (row+d, col+1)):
                         possible_actions.append(((row, col), (row+d, col+1)))
-                    if self.is_valid_move(((row, col), (row+d, col-1))):
+                    if self.is_valid_move((row, col), (row+d, col-1)):
                         possible_actions.append(((row, col), (row+d, col-1)))
 
-                elif piece == KNIGHT:
+                elif abs(piece) == KNIGHT:
                     # L-Movements
                     knight_moves = [(2, 1), (2, -1), (-2, 1), (-2, -1), (1, 2), (1, -2), (-1, 2), (-1, -2)]
                     for dr, dc in knight_moves:
@@ -201,7 +202,7 @@ class CustomChess(gym.Env):
                         if self.is_valid_move((row, col), (new_row, new_col)):
                             possible_actions.append(((row, col), (new_row, new_col)))
 
-                elif piece == BISHOP:
+                elif abs(piece) == BISHOP:
                     # Diagonal Movements
                     for i in range(1, self.size):
                         for dr, dc in [(-i, -i), (-i, i), (i, -i), (i, i)]:
@@ -209,7 +210,7 @@ class CustomChess(gym.Env):
                             if self.is_valid_move((row, col), (new_row, new_col)): 
                                 possible_actions.append(((row, col), (new_row, new_col)))
                 
-                elif piece == ROOK:
+                elif abs(piece) == ROOK:
                     # Straight Movements
                     for r in range(self.size):
                         if (r != row) and self.is_valid_move((row, col), (r, col)):
@@ -218,7 +219,7 @@ class CustomChess(gym.Env):
                         if (c != col) and self.is_valid_move((row, col), (r, col)):
                             possible_actions.append(((row, col), (row, c)))
 
-                elif piece == QUEEN:
+                elif abs(piece) == QUEEN:
                     # Straight Movements
                     for r in range(self.size):
                         if (r != row) and self.is_valid_move((row, col), (r, col)):
@@ -233,7 +234,7 @@ class CustomChess(gym.Env):
                             if self.is_valid_move((row, col), (new_row, new_col)):
                                 possible_actions.append(((row, col), (new_row, new_col)))
 
-                elif piece == KING:
+                elif abs(piece) == KING:
                     for dr in [-1, 0, 1]:
                         for dc in [-1, 0, 1]:
                             if ((dr, dc) == (0, 0)):
@@ -246,12 +247,12 @@ class CustomChess(gym.Env):
     
     def is_valid_move(self, start, end):
 
+        # Check if the end position is within bounds (on the board)
+        if not (0 <= end[0] < self._size and 0 <= end[1] < self._size):
+            return False
+        
         start_p = self._board[start[0]][start[1]]
         end_p = self._board[end[0]][end[1]]
-
-        # Check if the end position is within bounds (on the board)
-        if not (0 <= end[0] < self.size and 0 <= end[1] < self.size):
-            return False
         
         # Check if the end position is occupied by the same color
         if end_p != 0 and ((start_p>0 and end_p>0) or (start_p<0 and end_p<0)):
@@ -324,8 +325,8 @@ class CustomChess(gym.Env):
         return self._size
     
     @property
-    def layout(self):
-        return self._layout
+    # def layout(self):
+    #     return self._layout
 
     @property
     def turn(self):
