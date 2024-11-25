@@ -23,20 +23,112 @@ import CustomChess  as cc
 # ============================================================ #
 #                      MC (EXPLORING STARTS)                   #
 # ============================================================ #
-def MC_ExploringStarts(env, gamma, step_size, epsilon, max_episode):
-    return -1
+
+
+def MC_ExploringStarts(env, num_episodes=500, gamma=0.9):
+    Q = {}
+    returns = {}
+
+    for _ in range(num_episodes):
+        state, _ = env.reset()
+        env._board = random.choice([cc.board_LosAlamos])  # Exploring Start
+        action = random.choice(env.get_possible_actions())
+
+        episode = []
+        done = False
+        while not done:
+            next_state, reward, terminated, _, _ = env.step(action)
+            episode.append((state, action, reward))
+            state = next_state
+            if not terminated:
+                action = random.choice(env.get_possible_actions())
+            done = terminated
+
+        G = 0
+        visited = set()
+        for s, a, r in reversed(episode):
+            G = gamma * G + r
+            if (s, a) not in visited:
+                if (s, a) not in returns:
+                    returns[(s, a)] = []
+                returns[(s, a)].append(G)
+                Q[(s, a)] = np.mean(returns[(s, a)])
+                visited.add((s, a))
+
+    return Q
 
 # ============================================================ #
 #                         MC (E-SOFT)                          #
 # ============================================================ #
-def MC_ESoft(env, gamma, step_size, epsilon, max_episode):
-    return -1
+
+
+def MC_ESoft(env, num_episodes=500, gamma=0.9, epsilon=0.1):
+    Q = {}
+    returns = {}
+
+    for _ in range(num_episodes):
+        state, _ = env.reset()
+        episode = []
+        done = False
+
+        while not done:
+            possible_actions = env.get_possible_actions()
+            if random.uniform(0, 1) < epsilon:
+                action = random.choice(possible_actions)
+            else:
+                q_values = [Q.get((state, a), 0) for a in possible_actions]
+                action = possible_actions[np.argmax(q_values)]
+
+            next_state, reward, terminated, _, _ = env.step(action)
+            episode.append((state, action, reward))
+            state = next_state
+            done = terminated
+
+        G = 0
+        visited = set()
+        for s, a, r in reversed(episode):
+            G = gamma * G + r
+            if (s, a) not in visited:
+                if (s, a) not in returns:
+                    returns[(s, a)] = []
+                returns[(s, a)].append(G)
+                Q[(s, a)] = np.mean(returns[(s, a)])
+                visited.add((s, a))
+
+    return Q
 
 # ============================================================ #
 #                         EXPECTED SARSA                       #
 # ============================================================ #
-def ExpectedSARSA(env, gamma, step_size, epsilon, max_episode):
-    return -1
+
+def ExpectedSARSA(env, num_episodes=500, gamma=0.9, alpha=0.1, epsilon=0.1):
+    Q = {}
+
+    for _ in range(num_episodes):
+        state, _ = env.reset()
+        done = False
+
+        while not done:
+            possible_actions = env.get_possible_actions()
+            if random.uniform(0, 1) < epsilon:
+                action = random.choice(possible_actions)
+            else:
+                q_values = [Q.get((state, a), 0) for a in possible_actions]
+                action = possible_actions[np.argmax(q_values)]
+
+            next_state, reward, terminated, _, _ = env.step(action)
+
+            if not terminated:
+                next_q_values = [Q.get((next_state, a), 0) for a in env.get_possible_actions()]
+                expected_q = (1 - epsilon) * max(next_q_values) + epsilon * np.mean(next_q_values)
+            else:
+                expected_q = 0
+
+            Q[(state, action)] = Q.get((state, action), 0) + alpha * (reward + gamma * expected_q - Q.get((state, action), 0))
+            state = next_state
+            done = terminated
+
+    return Q
 
 # ============================================================ #
 #                          Q-LEARNING                          #
