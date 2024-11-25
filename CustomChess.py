@@ -9,6 +9,7 @@
         Group Members:
             Kyle Eng 101192595
             Joshua Olojede 101182941
+            Haroon Rashid 101183600
 '''
 
 import numpy as np
