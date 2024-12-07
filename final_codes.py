@@ -17,15 +17,12 @@ import numpy as np
 import random
 import time
 
-import CustomChess  as cc
-
 # ==================================================================================================================================================================================== #
+
 
 # ============================================================ #
 #                      MC (EXPLORING STARTS)                   #
 # ============================================================ #
-
-
 def MC_ExploringStarts(env, num_episodes=500, gamma=0.9):
     Q = {}
     returns = {}
@@ -58,11 +55,10 @@ def MC_ExploringStarts(env, num_episodes=500, gamma=0.9):
 
     return Q
 
+
 # ============================================================ #
 #                         MC (E-SOFT)                          #
 # ============================================================ #
-
-
 def MC_ESoft(env, num_episodes=500, gamma=0.9, epsilon=0.1):
     Q = {}
     returns = {}
@@ -98,10 +94,10 @@ def MC_ESoft(env, num_episodes=500, gamma=0.9, epsilon=0.1):
 
     return Q
 
+
 # ============================================================ #
 #                         EXPECTED SARSA                       #
 # ============================================================ #
-
 def ExpectedSARSA(env, num_episodes=500, gamma=0.9, alpha=0.1, epsilon=0.1):
     Q = {}
 
@@ -130,6 +126,7 @@ def ExpectedSARSA(env, num_episodes=500, gamma=0.9, alpha=0.1, epsilon=0.1):
             done = terminated
 
     return Q
+
 
 # ============================================================ #
 #                          Q-LEARNING                          #
@@ -174,10 +171,10 @@ def QLearning(env, gamma, step_size, epsilon, max_episode):
 
     return Pi, q
 
+
 # ============================================================ #
 #                           DYNA-Q                             #
 # ============================================================ #
-# TODO: Make it work for chess env
 def DynaQ(env, gamma, step_size, epsilon, max_episode, max_model_step):
     # Initialize Q, model
     q = np.zeros((env.n_states, env.n_actions))
@@ -229,49 +226,6 @@ def DynaQ(env, gamma, step_size, epsilon, max_episode, max_model_step):
 #                          TESTING                             #
 # ============================================================ #
 
-def runQLExperiments(env):
-
-    def repeatExperiments(gamma=0.9, step_size=0.1, epsilon=0.1, max_episode=500):
-        n_runs = 5
-        RMSE = np.zeros([n_runs])
-        for r in range(n_runs):
-            Pi, q = QLearning(env, gamma, step_size, epsilon, max_episode)
-            # TODO: compute RMSE(q, q_star)
-            RMSE[r] = np.sqrt(np.mean((q - q_star) ** 2))
-
-        # TODO: compute and return the *average* RMSE over runs
-        averageRMSE = np.mean(RMSE)
-        return averageRMSE
-
-    step_size_list = [0.1, 0.2, 0.5, 0.9]
-    epsilon_list = [0.05, 0.1, 0.5, 0.9]
-    max_episode_list = [50, 100, 500, 1000]
-    
-    step_size_results = np.zeros([len(step_size_list)])
-    epsilon_results = np.zeros([len(epsilon_list)])
-    max_episode_results = np.zeros([len(max_episode_list)])
-    
-    q_star = np.load('optimal_q.npy')
-
-    # TODO: Call repeatExperiments() with different step_size in the step_size_list,
-    # *while fixing others as default*. Save the results to step_size_results.
-    for i in range(len(step_size_list)):
-        step_size_results[i] = repeatExperiments(step_size=step_size_list[i])
-
-    # TODO: Call repeatExperiments() with different epsilon in the epsilon_list,
-    # *while fixing others as default*. Save the results to epsilon_results.
-    for i in range(len(epsilon_list)):
-        epsilon_results[i] = repeatExperiments(epsilon=epsilon_list[i])
-
-    
-    # TODO: Call repeatExperiments() with different max_episode in the max_episode_list,
-    # *while fixing others as default*. Save the results to max_episode_results.
-    for i in range(len(max_episode_list)):
-        max_episode_results[i] = repeatExperiments(max_episode=max_episode_list[i])
-
-    return step_size_results, epsilon_results, max_episode_results
-
-def runDynaQExperiments(env):
     
     def repeatExperiments(gamma=0.9, step_size=0.1, epsilon=0.5, max_episode=100, max_model_step=10):
         n_runs = 5
