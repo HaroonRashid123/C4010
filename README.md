@@ -4,6 +4,7 @@
 - Kyle Eng 101192595
 - Haroon Rashid 101183600
 - Joshua Olojede 101182941
+- Owen Yang 101185223
 
 ## Git Commands
 ### Cloning (one time only)
