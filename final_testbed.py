@@ -153,9 +153,7 @@ def _runAlgorithms():
     )
 
     print(f"Time taken: {time.time() - start_time:.2f} seconds")
-    print("\nEvaluation Returns:")
-    for episode, return_value in enumerate(eval_returns):
-        print(f"Episode {episode * 20}: Return = {return_value}")
+    
 
 if __name__ == "__main__":
     print('testing')
