@@ -20,7 +20,10 @@ import gym
 import chess
 import random
 import final_codes as fc
-# import gym_chess
+import matplotlib.pyplot as plt
+
+
+
 
 
 class Chess960Env(gym.Env):
@@ -43,26 +46,29 @@ class Chess960Env(gym.Env):
         to_square = action % 64
         move = chess.Move(from_square, to_square)
 
-        # Check if move is legal
         legal_moves = list(self.board.legal_moves)
         if any(m.from_square == move.from_square and m.to_square == move.to_square for m in legal_moves):
             self.board.push(move)
             
-           
-            reward = 0.1  
+            
+            if self.board.is_game_over():
+                reward = 1.0 if self.board.is_checkmate() else 0 
+                return str(self.board), reward, True, False, {}
+            
+            
+            opponent_moves = list(self.board.legal_moves)
+            if opponent_moves:
+                opponent_move = random.choice(opponent_moves)
+                self.board.push(opponent_move)
+            
+            
+            reward = 0 
             if self.board.is_checkmate():
-                reward = 1.0 
-            elif self.board.is_stalemate():
-                reward = -0.5
-            elif self.board.is_check():
-                reward = 0.3  
-            
-            
+                reward = -1.0  
             done = self.board.is_game_over()
             
             return str(self.board), reward, done, False, {}
         else:
-            
             return str(self.board), -1.0, True, False, {}
 
     def get_possible_actions(self):
@@ -115,19 +121,19 @@ def _runAlgorithms():
                 features[i] = ((state_hash + i) % 2) * 2 - 1
             return features
 
-    # Define evaluation function here, before using it
+    
     def eval_func(env, featurizer, W, policy_func):
         total_reward = 0
         state = env.reset()
         state = featurizer.featurize(state)
         done = False
-        max_steps = 50
+        max_steps = 400
         steps = 0
         
         while not done and steps < max_steps:
             steps += 1
             action = policy_func(state, W)
-            if action is None:  # No legal moves available
+            if action is None:  
                 break
                 
             next_state, reward, terminated, truncated, _ = env.step(action)
@@ -158,3 +164,4 @@ def _runAlgorithms():
 if __name__ == "__main__":
     print('testing')
     _runAlgorithms()
+   
