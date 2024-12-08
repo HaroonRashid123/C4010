@@ -10,6 +10,7 @@
             Kyle Eng 101192595
             Joshua Olojede 101182941
             Owen Yang 101185223
+            Haroon Rashid 101183600
 '''
 
 import numpy as np
