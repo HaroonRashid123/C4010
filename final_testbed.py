@@ -137,16 +137,16 @@ def _runAlgorithms():
                 state = featurizer.featurize(next_state)
         
         return total_reward
-    # Initialize parameters for FA
+ 
     featurizer = SimpleFeaturizer(n_features=100)
-    env.action_space = gym.spaces.Discrete(env.n_actions)  # Add action space
+    env.action_space = gym.spaces.Discrete(env.n_actions) 
 
     W, eval_returns = fc.QLearningFA(
         env=env,
         featurizer=featurizer,
         eval_func=eval_func,
         gamma=gamma,
-        step_size=0.01,  # Smaller step size for FA
+        step_size=0.01, 
         epsilon=epsilon,
         max_episodes=500,
         evaluate_every=20
