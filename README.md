@@ -5,6 +5,7 @@
 - Haroon Rashid 101183600
 - Joshua Olojede 101182941
 - Owen Yang 101185223
+- Will Siriphongphanh 101195794
 
 ## Git Commands
 ### Cloning (one time only)
